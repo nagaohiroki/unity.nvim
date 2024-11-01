@@ -2,7 +2,7 @@
 
 This is a Neovim plugin for Unity
 
-- Neovim commands for controlling Unity.
+- Unity Play/Stop/Refresh with Neovim commands.
 - Configuration options for nvim-dap. (Please check the license of the package before using it.)
    - [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc)
    - [unity-debug](https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry)
