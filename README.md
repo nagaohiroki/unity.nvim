@@ -64,6 +64,19 @@ This is a Neovim plugin for Unity
 |  InstallUnityDebugger | Install [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc) \*1 |
 |  InstallUnityDebuggerOld | Install [unity-debug](https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry) \*1 |
 
-\*1 debugger install directory.
+\*1 Installed debugger path.
 - **Linux** or **MacOS**: `~/.local/share/nvim/unity-degger`
 - **Windows**: `%LOCALAPPDATA%\nvim-data\unity-degger`
+
+
+## Note
+
+vstuc on nvim-dap is not working.  
+Adding filterOptions to nvim-dap's setExceptionBreakpoints made it work.
+
+[mfussenegger/nvim-dap/lua/dap/session.lua](https://github.com/mfussenegger/nvim-dap/blob/master/lua/dap/session.lua#L999)  
+
+``` diff
+- { filters = filters, exceptionOptions = exceptionOptions },  
++ { filters = filters, exceptionOptions = exceptionOptions, filterOptions = {} },  
+```
