@@ -26,7 +26,7 @@ This is a Neovim plugin for Unity
 
 ```lua
 {
-    "nagaohiroki/unity.nvim",
+    'nagaohiroki/unity.nvim',
     opts = {}
 }
 ```
@@ -35,19 +35,23 @@ This is a Neovim plugin for Unity
 
 ```lua
 {
-    "mfussenegger/nvim-dap",
+    'mfussenegger/nvim-dap',
     dependencies = {
         'nagaohiroki/unity.nvim',
     },
     config = function()
         local dap = require('dap')
-        local unity = require('unity')
-        dap.adapters.vstuc = unity.vstuc_dap_adapter()
-        -- dap.adapters.unity = unity.unity_dap_adapter() -- old debugger
-        dap.configurations.cs = {
-            --	unity.unity_dap_configuration(), -- old debugger
-            unity.vstuc_dap_configuration()
-        }
+        vim.keymap.set('n', '<F5>', function()
+        if dap.session() == nil then
+            local unity = require('unity')
+            -- vstuc
+            dap.adapters.vstuc = unity.vstuc_dap_adapter()
+            dap.configurations.cs = unity.vstuc_dap_configuration()
+            -- unity-debug(old)
+            -- dap.adapters.unity = unity.unity_dap_adapter()
+            -- dap.configurations.cs = { unity.unity_dap_configuration() }
+            dap.continue()
+        end)
     end
 }
 ```

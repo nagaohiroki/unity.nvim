@@ -85,6 +85,37 @@ end
 local function unity_debug_path()
 	return vim.fn.fnameescape(vim.fn.stdpath('data') .. '/unity-debugger/unity-debug')
 end
+local function unity_attach_probs()
+	local probs = {}
+	local system_obj = vim.system(
+		{ 'dotnet', vstuc_path() .. '/extension/bin/UnityAttachProbe.dll' },
+		{ text = true, stdin = true })
+	local completed = system_obj:wait(2000)
+	local stdout = completed.stdout
+	if stdout == nil or #stdout == 0 then
+		print('No endpoint found (is unity running?)')
+		return nil
+	end
+	for json in vim.gsplit(stdout, '\n') do
+		if json ~= '' then
+			local probe = vim.json.decode(json)
+			for _, p in pairs(probe) do
+				if p.isBackground == false then
+					local is_unique = true
+					for _, v in pairs(probs) do
+						if v.debuggerPort == p.debuggerPort then
+							is_unique = false
+						end
+					end
+					if is_unique == true then
+						probs[#probs + 1] = p
+					end
+				end
+			end
+		end
+	end
+	return probs
+end
 function M.setup()
 	local functionTbl = {
 		'Refresh',
@@ -108,6 +139,17 @@ function M.setup()
 		download_debugger(unity_debug_path(),
 			'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry/vsextensions/unity-debug/3.0.11/vspackage')
 	end, {})
+
+	vim.api.nvim_create_user_command('ShowUnityAttachProbs', function()
+		local probs = unity_attach_probs()
+		if probs == nil then
+			vim.print('No endpoint found (is unity running?)')
+			return
+		end
+		for _, p in ipairs(probs) do
+			vim.print(p)
+		end
+	end, {})
 end
 
 function M.vstuc_dap_adapter()
@@ -120,18 +162,30 @@ function M.vstuc_dap_adapter()
 end
 
 function M.vstuc_dap_configuration()
-	return {
-		type = 'vstuc',
-		request = 'attach',
-		name = 'Attach to Unity',
-		logFile = vstuc_path() .. '/vstuc.log',
-		projectPath = function()
-			return find_path('/Assets')
-		end,
-		endPoint = function()
-			return string.format('127.0.0.1:%d', unity_debugger_port())
-		end
-	}
+	if vim.bo.filetype ~= 'cs' then
+		return nil
+	end
+	vim.notify('searching proccess...')
+	local probs = unity_attach_probs()
+	if probs == nil then
+		vim.notify('No endpoint found (is unity running?)')
+		return nil
+	end
+	local tbl = {}
+	for _, p in ipairs(probs) do
+		local address = p.address .. ':' .. p.debuggerPort
+		local name = p.projectName .. '(' .. p.type .. '): - ' .. address
+		tbl[#tbl + 1] = {
+			type = 'vstuc',
+			request = 'attach',
+			name = name,
+			logFile = vstuc_path() .. '/vstuc' .. p.type .. '.log',
+			projectPath = find_path('/Assets'),
+			endPoint = address
+		}
+	end
+	vim.notify('Done.')
+	return tbl
 end
 
 function M.unity_dap_adapter()
