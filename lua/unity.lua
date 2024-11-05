@@ -86,6 +86,7 @@ local function unity_debug_path()
 	return vim.fn.fnameescape(vim.fn.stdpath('data') .. '/unity-debugger/unity-debug')
 end
 local function unity_attach_probs()
+	vim.notify('searching proccess...')
 	local probs = {}
 	local system_obj = vim.system(
 		{ 'dotnet', vstuc_path() .. '/extension/bin/UnityAttachProbe.dll' },
@@ -114,6 +115,7 @@ local function unity_attach_probs()
 			end
 		end
 	end
+	vim.notify('done.')
 	return probs
 end
 function M.setup()
@@ -140,7 +142,7 @@ function M.setup()
 			'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry/vsextensions/unity-debug/3.0.11/vspackage')
 	end, {})
 
-	vim.api.nvim_create_user_command('ShowUnityAttachProbs', function()
+	vim.api.nvim_create_user_command('ShowUnityProcess', function()
 		local probs = unity_attach_probs()
 		if probs == nil then
 			vim.print('No endpoint found (is unity running?)')
@@ -165,7 +167,6 @@ function M.vstuc_dap_configuration()
 	if vim.bo.filetype ~= 'cs' then
 		return nil
 	end
-	vim.notify('searching proccess...')
 	local probs = unity_attach_probs()
 	if probs == nil then
 		vim.notify('No endpoint found (is unity running?)')
@@ -174,7 +175,10 @@ function M.vstuc_dap_configuration()
 	local tbl = {}
 	for _, p in ipairs(probs) do
 		local address = p.address .. ':' .. p.debuggerPort
-		local name = p.projectName .. '(' .. p.type .. '): - ' .. address
+		local name = string.format('%s(%s:%s) %s pid:%s', p.projectName, p.machine, p.type, address, p.processId)
+		if p.unityPlayer ~= vim.NIL then
+			name = string.format('%s(%s)', name, p.unityPlayer.packageName)
+		end
 		tbl[#tbl + 1] = {
 			type = 'vstuc',
 			request = 'attach',
@@ -184,7 +188,6 @@ function M.vstuc_dap_configuration()
 			endPoint = address
 		}
 	end
-	vim.notify('Done.')
 	return tbl
 end
 
