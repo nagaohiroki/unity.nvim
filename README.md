@@ -42,14 +42,15 @@ This is a Neovim plugin for Unity
     config = function()
         local dap = require('dap')
         vim.keymap.set('n', '<F5>', function()
-        if dap.session() == nil then
-            local unity = require('unity')
-            -- vstuc
-            dap.adapters.vstuc = unity.vstuc_dap_adapter()
-            dap.configurations.cs = unity.vstuc_dap_configuration()
-            -- unity-debug(old)
-            -- dap.adapters.unity = unity.unity_dap_adapter()
-            -- dap.configurations.cs = { unity.unity_dap_configuration() }
+            if dap.session() == nil then
+                local unity = require('unity')
+                -- vstuc
+                dap.adapters.vstuc = unity.vstuc_dap_adapter()
+                dap.configurations.cs = unity.vstuc_dap_configuration()
+                -- unity-debug(old)
+                -- dap.adapters.unity = unity.unity_dap_adapter()
+                -- dap.configurations.cs = { unity.unity_dap_configuration() }
+            end
             dap.continue()
         end)
     end
