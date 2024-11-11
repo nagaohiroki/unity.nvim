@@ -35,7 +35,7 @@ This is a Neovim plugin for Unity
 
 ```lua
 {
-    'mfussenegger/nvim-dap',
+    'nagaohiroki/nvim-dap', -- Fixed vstuc error(See Note)
     dependencies = {
         'nagaohiroki/unity.nvim',
     },
