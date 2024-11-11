@@ -5,7 +5,7 @@ This is a Neovim plugin for Unity
 - Unity Play/Stop/Refresh with Neovim commands.
 - Configuration options for nvim-dap. (Please check the license of the package before using it.)
    - [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc)
-   - [unity-debug](https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry)
+   - [unity-debug](https://marketplace.visualstudio.com/items?itemName=deitry.unity-debug)
 
 
 ## Requrements
@@ -68,7 +68,7 @@ This is a Neovim plugin for Unity
 |  UPauseToggle | Toggle Pause Unity |
 |  ShowUnityProcess | Show Debug Target Info |
 |  InstallUnityDebugger | Install [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc) \*1 |
-|  InstallUnityDebuggerOld | Install [unity-debug](https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry) \*1 |
+|  InstallUnityDebuggerOld | Install [unity-debug](https://marketplace.visualstudio.com/items?itemName=deitry.unity-debug) \*1 |
 
 \*1 Installed debugger path.
 - **Linux** or **MacOS**: `~/.local/share/nvim/unity-degger`
