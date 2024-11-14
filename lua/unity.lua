@@ -1,4 +1,5 @@
 ﻿local M = {}
+M._config = { discover_time = 2000 }
 
 local function find_path(target)
 	local path = vim.fn.expand('%:p')
@@ -91,7 +92,7 @@ local function unity_attach_probs()
 	local system_obj = vim.system(
 		{ 'dotnet', vstuc_path() .. '/extension/bin/UnityAttachProbe.dll' },
 		{ text = true, stdin = true })
-	local completed = system_obj:wait(2000)
+	local completed = system_obj:wait(M._config.discover_time)
 	local stdout = completed.stdout
 	if stdout == nil or #stdout == 0 then
 		print('No endpoint found (is unity running?)')
@@ -118,7 +119,9 @@ local function unity_attach_probs()
 	vim.notify('done.')
 	return probs
 end
-function M.setup()
+function M.setup(config)
+	config = config or {}
+	M._config = vim.tbl_extend('force', M._config, config)
 	local functionTbl = {
 		'Refresh',
 		'Play',
