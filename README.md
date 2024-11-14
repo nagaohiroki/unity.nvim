@@ -27,7 +27,9 @@ This is a Neovim plugin for Unity
 ```lua
 {
     'nagaohiroki/unity.nvim',
-    opts = {}
+    opts = {
+        discover_time = 2000
+    }
 }
 ```
 
@@ -44,9 +46,6 @@ This is a Neovim plugin for Unity
         vim.keymap.set('n', '<F5>', function()
             if dap.session() == nil then
                 local unity = require('unity')
-                unity.setup({
-                    discover_time = 2000 -- default option
-                })
                 -- vstuc
                 dap.adapters.vstuc = unity.vstuc_dap_adapter()
                 dap.configurations.cs = unity.vstuc_dap_configuration()
