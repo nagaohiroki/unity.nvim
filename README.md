@@ -28,7 +28,7 @@ This is a Neovim plugin for Unity
 {
     'nagaohiroki/unity.nvim',
     opts = {
-        discover_time = 2000
+        discover_time = 2000 -- default option
     }
 }
 ```
