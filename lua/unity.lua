@@ -138,7 +138,7 @@ function M.setup(config)
   end
   vim.api.nvim_create_user_command('InstallUnityDebugger', function()
     download_debugger(vstuc_path(),
-      'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioToolsForUnity/vsextensions/vstuc/1.0.4/vspackage')
+      'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioToolsForUnity/vsextensions/vstuc/1.0.5/vspackage')
   end, {})
   vim.api.nvim_create_user_command('InstallUnityDebuggerOld', function()
     download_debugger(unity_debug_path(),
