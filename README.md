@@ -88,3 +88,5 @@ Adding filterOptions to nvim-dap's setExceptionBreakpoints made it work.
 - { filters = filters, exceptionOptions = exceptionOptions },  
 + { filters = filters, exceptionOptions = exceptionOptions, filterOptions = {} },  
 ```
+
+or wait for vstuc next version. [see](https://github.com/microsoft/vscode-dotnettools/issues/1705)
