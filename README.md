@@ -37,7 +37,7 @@ This is a Neovim plugin for Unity
 
 ```lua
 {
-    'nagaohiroki/nvim-dap', -- Fixed vstuc error(See Note)
+    'mfussenegger/nvim-dap',
     dependencies = {
         'nagaohiroki/unity.nvim',
     },
@@ -75,18 +75,3 @@ This is a Neovim plugin for Unity
 \*1 Installed debugger path.
 - **Linux** or **MacOS**: `~/.local/share/nvim/unity-degger`
 - **Windows**: `%LOCALAPPDATA%\nvim-data\unity-degger`
-
-
-## Note
-
-vstuc on nvim-dap is not working.  
-Adding filterOptions to nvim-dap's setExceptionBreakpoints made it work.
-
-[mfussenegger/nvim-dap/lua/dap/session.lua](https://github.com/mfussenegger/nvim-dap/blob/master/lua/dap/session.lua#L999)  
-
-``` diff
-- { filters = filters, exceptionOptions = exceptionOptions },  
-+ { filters = filters, exceptionOptions = exceptionOptions, filterOptions = {} },  
-```
-
-or wait for vstuc next version. [see](https://github.com/microsoft/vscode-dotnettools/issues/1705)
