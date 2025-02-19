@@ -128,8 +128,6 @@ function M.setup(config)
     'Pause',
     'Unpause',
     'Stop',
-    'PlayToggle',
-    'PauseToggle',
   }
   for _, v in ipairs(functionTbl) do
     vim.api.nvim_create_user_command('U' .. v, function()
