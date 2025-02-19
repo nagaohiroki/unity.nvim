@@ -66,8 +66,6 @@ This is a Neovim plugin for Unity
 |  UStop | Stop Playing Unity |
 |  UPause | Pause Unity |
 |  Unpause | Unpause Unity |
-|  UPlayToggle | Toggle Play Unity |
-|  UPauseToggle | Toggle Pause Unity |
 |  ShowUnityProcess | Show Debug Target Info |
 |  InstallUnityDebugger | Install [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc) \*1 |
 |  InstallUnityDebuggerOld | Install [unity-debug](https://marketplace.visualstudio.com/items?itemName=deitry.unity-debug) \*1 |
