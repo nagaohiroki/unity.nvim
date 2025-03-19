@@ -61,5 +61,5 @@ This is a Neovim plugin for Unity
 |  InstallUnityDebuggerOld | Install [unity-debug](https://marketplace.visualstudio.com/items?itemName=deitry.unity-debug) \*1 |
 
 \*1 Installed debugger path.
-- **Linux** or **MacOS**: `~/.local/share/nvim/unity-degger`
-- **Windows**: `%LOCALAPPDATA%\nvim-data\unity-degger`
+- **Linux** or **MacOS**: `~/.local/share/nvim/unity-debugger`
+- **Windows**: `%LOCALAPPDATA%\nvim-data\unity-debugger`
