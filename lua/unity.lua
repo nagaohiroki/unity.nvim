@@ -216,4 +216,17 @@ function M.unity_dap_configuration()
   }
 end
 
+function M.setup_vstuc()
+  local dap                = require('dap')
+  dap.adapters.vstuc       = M.vstuc_dap_adapter()
+  dap.providers.configs.cs = function(_) return M.vstuc_dap_configuration() end
+end
+
+--- @deprecated
+function M.setup_unity_debugger()
+  local dap                = require('dap')
+  dap.adapters.unity       = M.unity_dap_adapter()
+  dap.providers.configs.cs = function(_) return { M.unity_dap_configuration() } end
+end
+
 return M

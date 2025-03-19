@@ -42,19 +42,9 @@ This is a Neovim plugin for Unity
         'nagaohiroki/unity.nvim',
     },
     config = function()
-        local dap = require('dap')
-        vim.keymap.set('n', '<F5>', function()
-            if dap.session() == nil then
-                local unity = require('unity')
-                -- vstuc
-                dap.adapters.vstuc = unity.vstuc_dap_adapter()
-                dap.configurations.cs = unity.vstuc_dap_configuration()
-                -- unity-debug(old)
-                -- dap.adapters.unity = unity.unity_dap_adapter()
-                -- dap.configurations.cs = { unity.unity_dap_configuration() }
-            end
-            dap.continue()
-        end)
+        local unity = require('unity')
+        unity.setup_vstuc()
+        -- unity.setup_unity_debugger() -- unity-debug(old)
     end
 }
 ```
