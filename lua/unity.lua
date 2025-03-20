@@ -47,18 +47,15 @@ local function unity_message_port()
 end
 local function request(tbl)
   local messager_port = unity_message_port()
-  if messager_port == nil then
-    return
-  end
-  local uv = vim.uv
-  local udp = uv.new_udp()
+  if messager_port == nil then return end
+  local udp = vim.uv.new_udp()
   local json = vim.fn.json_encode(tbl)
-  uv.udp_send(udp, json, '127.0.0.1', messager_port, function(err)
+  vim.uv.udp_send(udp, json, '127.0.0.1', messager_port, function(err)
     if err then
       vim.print('error:', err)
     end
+    vim.uv.close(udp)
   end)
-  uv.close(udp)
 end
 
 local function download_debugger(dir, url)
