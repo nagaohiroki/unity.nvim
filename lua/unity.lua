@@ -58,6 +58,7 @@ local function request(tbl)
       vim.print('error:', err)
     end
   end)
+  uv.close(udp)
 end
 
 local function download_debugger(dir, url)
