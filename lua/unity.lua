@@ -56,11 +56,8 @@ local function request(tbl)
   uv.udp_send(udp, json, '127.0.0.1', messager_port, function(err)
     if err then
       vim.print('error:', err)
-    else
-      uv.close(udp)
     end
   end)
-  uv.run()
 end
 
 local function download_debugger(dir, url)
