@@ -1,5 +1,11 @@
 local M = {}
-M._config = { discover_time = 2000 }
+M._config = {
+  discover_time = 2000,
+  vstuc_url     =
+  'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioToolsForUnity/vsextensions/vstuc/1.1.0/vspackage',
+  unity_debug_url   =
+  'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry/vsextensions/unity-debug/3.0.11/vspackage'
+}
 
 local function find_path(target)
   local path = vim.fn.expand('%:p')
@@ -49,6 +55,7 @@ local function request(tbl)
   local messager_port = unity_message_port()
   if messager_port == nil then return end
   local udp = vim.uv.new_udp()
+  if udp == nil then return end
   local json = vim.fn.json_encode(tbl)
   vim.uv.udp_send(udp, json, '127.0.0.1', messager_port, function(err)
     if err then
@@ -130,12 +137,10 @@ function M.setup(config)
     end, {})
   end
   vim.api.nvim_create_user_command('InstallUnityDebugger', function()
-    download_debugger(vstuc_path(),
-      'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioToolsForUnity/vsextensions/vstuc/1.1.0/vspackage')
+    download_debugger(vstuc_path(), M._config.vstuc_url)
   end, {})
   vim.api.nvim_create_user_command('InstallUnityDebuggerOld', function()
-    download_debugger(unity_debug_path(),
-      'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry/vsextensions/unity-debug/3.0.11/vspackage')
+    download_debugger(unity_debug_path(), M._config.unity_debug_url)
   end, {})
 
   vim.api.nvim_create_user_command('ShowUnityProcess', function()
