@@ -1,9 +1,9 @@
 local M = {}
 M._config = {
-  discover_time = 2000,
-  vstuc_url     =
+  discover_time   = 2000,
+  vstuc_url       =
   'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioToolsForUnity/vsextensions/vstuc/1.1.0/vspackage',
-  unity_debug_url   =
+  unity_debug_url =
   'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry/vsextensions/unity-debug/3.0.11/vspackage'
 }
 
@@ -82,11 +82,14 @@ local function download_debugger(dir, url)
   end)
 end
 
+local function install_path(path)
+  return vim.fn.fnameescape(vim.fn.stdpath('data') .. '/unity-debugger/' .. path)
+end
 local function vstuc_path()
-  return vim.fn.fnameescape(vim.fn.stdpath('data') .. '/unity-debugger/vstuc')
+  return install_path('vstuc')
 end
 local function unity_debug_path()
-  return vim.fn.fnameescape(vim.fn.stdpath('data') .. '/unity-debugger/unity-debug')
+  return install_path('unity-debug')
 end
 local function unity_attach_probs()
   vim.notify('searching proccess...')
@@ -136,11 +139,17 @@ function M.setup(config)
       request({ Type = v, Value = '' })
     end, {})
   end
-  vim.api.nvim_create_user_command('InstallUnityDebugger', function()
+  vim.api.nvim_create_user_command('InstallUnityDebug', function()
     download_debugger(vstuc_path(), M._config.vstuc_url)
   end, {})
   vim.api.nvim_create_user_command('InstallUnityDebuggerOld', function()
     download_debugger(unity_debug_path(), M._config.unity_debug_url)
+  end, {})
+  vim.api.nvim_create_user_command('UninstallUnityDebugger', function()
+    vim.fn.delte(vstuc_path(), "rf")
+  end, {})
+  vim.api.nvim_create_user_command('UninstallUnityDebuggerOld', function()
+    vim.fn.delte(unity_debug_path(), "rf")
   end, {})
 
   vim.api.nvim_create_user_command('ShowUnityProcess', function()

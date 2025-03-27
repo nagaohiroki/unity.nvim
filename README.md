@@ -59,6 +59,8 @@ This is a Neovim plugin for Unity
 |  ShowUnityProcess | Show Debug Target Info |
 |  InstallUnityDebugger | Install [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc) \*1 |
 |  InstallUnityDebuggerOld | Install [unity-debug](https://marketplace.visualstudio.com/items?itemName=deitry.unity-debug) \*1 |
+|  UninstallUnityDebugger | Uninstall vstuc |
+|  UninstallUnityDebuggerOld | Uninstall unity-debug |
 
 \*1 Installed debugger path.
 - **Linux** or **MacOS**: `~/.local/share/nvim/unity-debugger`
