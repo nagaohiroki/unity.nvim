@@ -1,10 +1,24 @@
 local M = {}
 M._config = {
-  discover_time   = 2000,
-  vstuc_url       =
-  'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioToolsForUnity/vsextensions/vstuc/1.1.0/vspackage',
-  unity_debug_url =
-  'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/deitry/vsextensions/unity-debug/3.0.11/vspackage'
+  discover_time       = 2000,
+  install_path        = vim.fs.joinpath(vim.fn.stdpath('data'), 'unity-debugger', 'extensions'),
+  install_path_vscode = vim.fs.joinpath(vim.env.HOME, '.vscode', 'extensions'),
+  debugger            = 'vstuc',
+  debuggers           =
+  {
+    vstuc =
+    {
+      publisher = 'VisualStudioToolsForUnity',
+      extension = 'vstuc',
+      version   = '1.1.1',
+    },
+    unity_debug =
+    {
+      publisher = 'deitry',
+      extension = 'unity-debug',
+      version   = '3.0.11',
+    },
+  },
 }
 
 local function find_path(target)
@@ -15,15 +29,16 @@ local function find_path(target)
       return ''
     end
     path = new_path
-    local target_path = vim.fn.glob(path .. target)
+    local target_path = vim.fn.glob(vim.fs.joinpath(path, target))
     if target_path ~= '' then
       return path
     end
   end
 end
+
 local function find_editor_instance_json()
-  local editor_instance = '/Library/EditorInstance.json'
-  return find_path(editor_instance) .. editor_instance
+  local editor_instance = vim.fs.joinpath('Library', 'EditorInstance.json')
+  return vim.fs.joinpath(find_path(editor_instance), editor_instance)
 end
 local function get_process_id()
   local editor_instance = find_editor_instance_json()
@@ -51,6 +66,7 @@ local function unity_message_port()
   end
   return debugger_port + 2
 end
+
 local function request(tbl)
   local messager_port = unity_message_port()
   if messager_port == nil then return end
@@ -65,37 +81,70 @@ local function request(tbl)
   end)
 end
 
-local function download_debugger(dir, url)
-  if vim.fn.isdirectory(dir) == 1 then
-    vim.print('vstuc already downloaded ' .. dir)
-    return
-  end
-  local out = dir .. '/tmp.zip'
+local function download_debugger(path, url)
+  local dir = vim.fn.fnamemodify(path, ':h');
+  local out = path .. '.zip'
   vim.fn.mkdir(dir, 'p')
+  vim.print('start download.' .. url)
   vim.system({ 'curl', '--compressed', '-L', url, '-o', out }, { text = true }, function(_)
-    vim.print('done download.' .. url)
     vim.print('start extract')
     vim.system({ 'tar', 'xf', out, '-C', dir }, { text = true }, function(_)
-      vim.print('done extract. ' .. dir)
-      os.remove(out)
+      vim.uv.fs_rename(vim.fs.joinpath(dir, 'extension'), path, function(rename_err)
+        vim.print('done ' .. path)
+        if rename_err then
+          vim.print(rename_err)
+        end
+        local extension_files = { 'extension.vsixmanifest', '[Content_Types].xml' }
+        for _, v in pairs(extension_files) do
+          vim.uv.fs_rename(vim.fs.joinpath(dir, v), vim.fs.joinpath(path, v))
+        end
+        vim.schedule(function()
+          vim.fn.delete(out)
+        end)
+      end)
     end)
   end)
 end
 
-local function install_path(path)
-  return vim.fn.fnameescape(vim.fn.stdpath('data') .. '/unity-debugger/' .. path)
+local function get_install_name(debugger_name)
+  local debugger = M._config.debuggers[debugger_name]
+  local path = string.format('%s.%s-%s', debugger.publisher, debugger.extension, debugger.version)
+  return string.lower(path)
 end
-local function vstuc_path()
-  return install_path('vstuc')
+
+local function get_marketplace_url(debugger_name)
+  local debugger = M._config.debuggers[debugger_name]
+  local marketplace =
+  'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/%s/vsextensions/%s/%s/vspackage'
+  return string.format(marketplace, debugger.publisher, debugger.extension, debugger.version)
 end
-local function unity_debug_path()
-  return install_path('unity-debug')
+
+local function install_debugger(debugger_name)
+  local path = get_install_name(debugger_name)
+  local url = get_marketplace_url(debugger_name)
+  local dir = vim.fs.joinpath(M._config.install_path, path)
+  download_debugger(dir, url)
 end
+
+local function get_path(debugger_name)
+  local debugger_path = get_install_name(debugger_name)
+  local install = vim.fs.joinpath(M._config.install_path, debugger_path)
+  if vim.fn.isdirectory(install) == 1 then
+    return install
+  end
+  local vscode_install = vim.fs.joinpath(M._config.install_path_vscode, debugger_path)
+  if vim.fn.isdirectory(vscode_install) == 1 then
+    return vscode_install
+  end
+  vim.print(install .. ' and ' .. vscode_install .. ' not found')
+  return ''
+end
+
 local function unity_attach_probs()
   vim.notify('searching proccess...')
   local probs = {}
   local system_obj = vim.system(
-    { 'dotnet', vstuc_path() .. '/extension/bin/UnityAttachProbe.dll' },
+    { 'dotnet', vim.fs.joinpath(get_path('vstuc'), 'bin', 'UnityAttachProbe.dll') },
     { text = true, stdin = true })
   local completed = system_obj:wait(M._config.discover_time)
   local stdout = completed.stdout
@@ -124,59 +173,17 @@ local function unity_attach_probs()
   vim.notify('done.')
   return probs
 end
-function M.setup(config)
-  config = config or {}
-  M._config = vim.tbl_extend('force', M._config, config)
-  local functionTbl = {
-    'Refresh',
-    'Play',
-    'Pause',
-    'Unpause',
-    'Stop',
-  }
-  for _, v in ipairs(functionTbl) do
-    vim.api.nvim_create_user_command('U' .. v, function()
-      request({ Type = v, Value = '' })
-    end, {})
-  end
-  vim.api.nvim_create_user_command('InstallUnityDebug', function()
-    download_debugger(vstuc_path(), M._config.vstuc_url)
-  end, {})
-  vim.api.nvim_create_user_command('InstallUnityDebuggerOld', function()
-    download_debugger(unity_debug_path(), M._config.unity_debug_url)
-  end, {})
-  vim.api.nvim_create_user_command('UninstallUnityDebugger', function()
-    vim.fn.delete(vstuc_path(), "rf")
-  end, {})
-  vim.api.nvim_create_user_command('UninstallUnityDebuggerOld', function()
-    vim.fn.delete(unity_debug_path(), "rf")
-  end, {})
 
-  vim.api.nvim_create_user_command('ShowUnityProcess', function()
-    local probs = unity_attach_probs()
-    if probs == nil then
-      vim.print('No endpoint found (is unity running?)')
-      return
-    end
-    for _, p in ipairs(probs) do
-      vim.print(p)
-    end
-  end, {})
-end
-
-function M.vstuc_dap_adapter()
+local function vstuc_dap_adapter()
   return {
     type = 'executable',
     command = 'dotnet',
-    args = { vstuc_path() .. '/extension/bin/UnityDebugAdapter.dll' },
+    args = { vim.fs.joinpath(get_path('vstuc'), 'bin', 'UnityDebugAdapter.dll') },
     name = 'Attach to Unity'
   }
 end
 
-function M.vstuc_dap_configuration()
-  if vim.bo.filetype ~= 'cs' then
-    return nil
-  end
+local function vstuc_dap_configuration()
   local probs = unity_attach_probs()
   if probs == nil then
     vim.notify('No endpoint found (is unity running?)')
@@ -193,16 +200,15 @@ function M.vstuc_dap_configuration()
       type = 'vstuc',
       request = 'attach',
       name = name,
-      logFile = vstuc_path() .. '/vstuc' .. p.type .. '.log',
-      projectPath = find_path('/Assets'),
+      logFile = vim.fs.joinpath(vim.fn.stdpath('data'), 'dap_vstuc_' .. p.type .. '.log'),
       endPoint = address
     }
   end
   return tbl
 end
 
-function M.unity_dap_adapter()
-  local unityDebugCommand = unity_debug_path() .. '/extension/bin/UnityDebug.exe'
+local function unity_dap_adapter()
+  local unityDebugCommand = vim.fs.joinpath(get_path('unity_debug'), 'bin', 'UnityDebug.exe')
   local unityDebugArgs = {}
   if vim.fn.has('win32') == 0 then
     unityDebugArgs = { unityDebugCommand }
@@ -216,7 +222,7 @@ function M.unity_dap_adapter()
   }
 end
 
-function M.unity_dap_configuration()
+local function unity_dap_configuration()
   return {
     type = 'unity',
     request = 'launch',
@@ -225,17 +231,83 @@ function M.unity_dap_configuration()
   }
 end
 
-function M.setup_vstuc()
-  local dap                = require('dap')
-  dap.adapters.vstuc       = M.vstuc_dap_adapter()
-  dap.providers.configs.cs = function(_) return M.vstuc_dap_configuration() end
+local function setup_dap()
+  local success, dap = pcall(require, 'dap')
+  if not success then
+    return
+  end
+  dap.providers.configs.cs = function(_)
+    if M._config.debugger == 'unity-debug' then
+      dap.adapters.unity = unity_dap_adapter()
+      return { unity_dap_configuration() }
+    end
+    if M._config.debugger == 'vstuc' then
+      dap.adapters.vstuc = vstuc_dap_adapter()
+      return vstuc_dap_configuration()
+    end
+  end
 end
 
---- @deprecated
-function M.setup_unity_debugger()
-  local dap                = require('dap')
-  dap.adapters.unity       = M.unity_dap_adapter()
-  dap.providers.configs.cs = function(_) return { M.unity_dap_configuration() } end
+local function create_user_commands()
+  local functionTbl = {
+    'Refresh',
+    'Play',
+    'Pause',
+    'Unpause',
+    'Stop',
+  }
+  for _, v in ipairs(functionTbl) do
+    vim.api.nvim_create_user_command('U' .. v, function()
+      request({ Type = v, Value = '' })
+    end, {})
+  end
+
+  vim.api.nvim_create_user_command('UnityDebuggerInstall', function(opts)
+      install_debugger(opts.fargs[1])
+    end,
+    {
+      nargs = 1,
+      complete = function(_, _, _)
+        local names = {}
+        for name, _ in pairs(M._config.debuggers) do
+          names[#names + 1] = name
+        end
+        return names
+      end
+    })
+
+  vim.api.nvim_create_user_command('UnityDebuggerUninstall', function(opts)
+      vim.fn.delete(vim.fs.joinpath(M._config.install_path, opts.fargs[1]), 'rf')
+    end,
+    {
+      nargs = 1,
+      complete = function(_, _, _)
+        local names = {}
+        for name, _ in vim.fs.dir(M._config.install_path) do
+          if name ~= '.' and name ~= '..' then
+            names[#names + 1] = name
+          end
+        end
+        return names
+      end
+    })
+
+  vim.api.nvim_create_user_command('ShowUnityProcess', function()
+    local probs = unity_attach_probs()
+    if probs == nil then
+      vim.print('No endpoint found (is unity running?)')
+      return
+    end
+    for _, p in ipairs(probs) do
+      vim.print(p)
+    end
+  end, {})
+end
+
+function M.setup(config)
+  M._config = vim.tbl_deep_extend('force', M._config, config or {})
+  setup_dap()
+  create_user_commands()
 end
 
 return M
