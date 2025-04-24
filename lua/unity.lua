@@ -184,6 +184,9 @@ local function vstuc_dap_adapter()
 end
 
 local function vstuc_dap_configuration()
+  if vim.bo.filetype ~= 'cs' then
+    return
+  end
   local probs = unity_attach_probs()
   if probs == nil then
     vim.notify('No endpoint found (is unity running?)')
