@@ -21,25 +21,10 @@ M._config = {
   },
 }
 
-local function find_path(target)
-  local path = vim.fn.expand('%:p')
-  while true do
-    local new_path = vim.fn.fnamemodify(path, ':h')
-    if new_path == path then
-      return ''
-    end
-    path = new_path
-    local target_path = vim.fn.glob(vim.fs.joinpath(path, target))
-    if target_path ~= '' then
-      return path
-    end
-  end
+local function find_editor_instance_json()
+  return vim.fn.findfile(vim.fs.joinpath('Library', 'EditorInstance.json'), '.;')
 end
 
-local function find_editor_instance_json()
-  local editor_instance = vim.fs.joinpath('Library', 'EditorInstance.json')
-  return vim.fs.joinpath(find_path(editor_instance), editor_instance)
-end
 local function get_process_id()
   local editor_instance = find_editor_instance_json()
   local file = io.open(editor_instance, 'r')
@@ -52,6 +37,7 @@ local function get_process_id()
   file:close()
   return json.process_id
 end
+
 local function unity_debugger_port()
   local process_id = get_process_id()
   if process_id == nil then
@@ -59,6 +45,7 @@ local function unity_debugger_port()
   end
   return 56000 + (process_id % 1000)
 end
+
 local function unity_message_port()
   local debugger_port = unity_debugger_port()
   if debugger_port == nil then
