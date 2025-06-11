@@ -10,7 +10,7 @@ M._config = {
     {
       publisher = 'VisualStudioToolsForUnity',
       extension = 'vstuc',
-      version   = '1.1.1',
+      version   = '1.1.2',
     },
     unity_debug =
     {
