@@ -5,7 +5,7 @@ This is a Neovim plugin for Unity
 - Unity Play/Stop/Refresh with Neovim commands.
 - Debug Unity from Neovim. (Please check the license of the package before using it.)
    - [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc)
-
+   - [unity-debug](https://marketplace.visualstudio.com/items?itemName=deitry.unity-debug)
 
 ## Requrements
 
@@ -32,8 +32,8 @@ This is a Neovim plugin for Unity
 |  UPause | Pause Unity |
 |  Unpause | Unpause Unity |
 |  ShowUnityProcess | Show Debug Target Info |
-|  UnityDebuggerInstall | Install Debugger  \*1 |
-|  UnityDebuggerUninstall| Uninstall Debugger  |
+|  UnityDebuggerInstall (Press Ctrl+D to see suggestions) | Install Debugger  \*1 |
+|  UnityDebuggerUninstall (Press Ctrl+D to see suggestions) | Uninstall Debugger  |
 
 \*1 Installed debugger path.
 - **Linux** or **MacOS**: `~/.local/share/nvim/unity-debugger`
@@ -48,14 +48,20 @@ This is a Neovim plugin for Unity
     discover_time       = 2000,
     install_path        = vim.fs.joinpath(vim.fn.stdpath('data'), 'unity-debugger', 'extensions'),
     install_path_vscode = vim.fs.joinpath(vim.env.HOME, '.vscode', 'extensions'),
-    debugger            = 'vstuc',
+    debugger            = 'vstuc', -- or 'unity_debug'
     debuggers           =
     {
       vstuc =
       {
         publisher = 'VisualStudioToolsForUnity',
         extension = 'vstuc',
-        version   = '1.1.2',
+        version   = '1.1.1',
+      },
+      unity_debug =
+      {
+        publisher = 'deitry',
+        extension = 'unity-debug',
+        version   = '3.0.11',
       },
     },
   }

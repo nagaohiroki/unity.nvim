@@ -1,4 +1,5 @@
 local M = {}
+local debugger_installer = require('debugger_installer')
 M._config = {
   discover_time       = 2000,
   install_path        = vim.fs.joinpath(vim.fn.stdpath('data'), 'unity-debugger', 'extensions'),
@@ -114,63 +115,8 @@ local function request(tbl)
   end)
 end
 
-local function download_debugger(path, url)
-  local dir = vim.fn.fnamemodify(path, ':h');
-  local out = path .. '.zip'
-  vim.fn.mkdir(dir, 'p')
-  vim.print('start download.' .. url)
-  vim.system({ 'curl', '--compressed', '-L', url, '-o', out }, { text = true }, function(_)
-    vim.print('start extract')
-    vim.system({ 'tar', 'xf', out, '-C', dir }, { text = true }, function(_)
-      vim.uv.fs_rename(vim.fs.joinpath(dir, 'extension'), path, function(rename_err)
-        vim.print('done ' .. path)
-        if rename_err then
-          vim.print(rename_err)
-        end
-        local extension_files = { 'extension.vsixmanifest', '[Content_Types].xml' }
-        for _, v in pairs(extension_files) do
-          vim.uv.fs_rename(vim.fs.joinpath(dir, v), vim.fs.joinpath(path, v))
-        end
-        vim.schedule(function()
-          vim.fn.delete(out)
-        end)
-      end)
-    end)
-  end)
-end
-
-local function get_install_name(debugger_name)
-  local debugger = M._config.debuggers[debugger_name]
-  local path = string.format('%s.%s-%s', debugger.publisher, debugger.extension, debugger.version)
-  return string.lower(path)
-end
-
-local function get_marketplace_url(debugger_name)
-  local debugger = M._config.debuggers[debugger_name]
-  local marketplace =
-  'https://marketplace.visualstudio.com/_apis/public/gallery/publishers/%s/vsextensions/%s/%s/vspackage'
-  return string.format(marketplace, debugger.publisher, debugger.extension, debugger.version)
-end
-
-local function install_debugger(debugger_name)
-  local path = get_install_name(debugger_name)
-  local url = get_marketplace_url(debugger_name)
-  local dir = vim.fs.joinpath(M._config.install_path, path)
-  download_debugger(dir, url)
-end
-
-local function get_path(debugger_name)
-  local debugger_path = get_install_name(debugger_name)
-  local install = vim.fs.joinpath(M._config.install_path, debugger_path)
-  if vim.fn.isdirectory(install) == 1 then
-    return install
-  end
-  local vscode_install = vim.fs.joinpath(M._config.install_path_vscode, debugger_path)
-  if vim.fn.isdirectory(vscode_install) == 1 then
-    return vscode_install
-  end
-  vim.print(install .. ' and ' .. vscode_install .. ' not found')
-  return ''
+local function get_path(debugger)
+  return debugger_installer.get_path(debugger, M._config)
 end
 
 local function unity_attach_probs()
@@ -315,36 +261,6 @@ local function create_user_commands()
     end, {})
   end
 
-  vim.api.nvim_create_user_command('UnityDebuggerInstall', function(opts)
-      install_debugger(opts.fargs[1])
-    end,
-    {
-      nargs = 1,
-      complete = function(_, _, _)
-        local names = {}
-        for name, _ in pairs(M._config.debuggers) do
-          names[#names + 1] = name
-        end
-        return names
-      end
-    })
-
-  vim.api.nvim_create_user_command('UnityDebuggerUninstall', function(opts)
-      vim.fn.delete(vim.fs.joinpath(M._config.install_path, opts.fargs[1]), 'rf')
-    end,
-    {
-      nargs = 1,
-      complete = function(_, _, _)
-        local names = {}
-        for name, _ in vim.fs.dir(M._config.install_path) do
-          if name ~= '.' and name ~= '..' then
-            names[#names + 1] = name
-          end
-        end
-        return names
-      end
-    })
-
   vim.api.nvim_create_user_command('ShowUnityProcess', function()
     local probs = unity_attach_probs()
     if probs == nil then
@@ -355,6 +271,8 @@ local function create_user_commands()
       vim.print(p)
     end
   end, {})
+
+  debugger_installer.create_user_commands(M._config)
 end
 
 function M.setup(config)
