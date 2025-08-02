@@ -21,6 +21,52 @@ M._config = {
   },
 }
 
+local function PortFromLogFile(file_path)
+  local file = io.open(file_path, 'r')
+  if file == nil then return end
+  local lines = file:lines()
+  local line_table = {}
+  local count = 0
+  for line in lines do
+    count = count + 1
+    line_table[count] = line
+  end
+  file:close()
+  if count < 2 then return end
+  if vim.startswith(line_table[count], 'PlayerConnection::Cleanup') then return end
+  local one = line_table[1]
+  if one == nil then return end
+  local two = line_table[2]
+  if two == nil then return end
+  local port = one:match('Starting managed debugger on port (%d+)')
+  if port == nil then return end
+  local ip = two:match('(%d%d?%d?%.%d%d?%d?%.%d%d?%d?%.%d%d?%d?)$')
+  if ip == nil then return end
+  return ip .. ':' .. port
+end
+
+local function GatheringPorts()
+  local ports = {}
+  local count = 0
+  local locallow = ''
+  if vim.fn.has('win32') == 1 then
+    locallow = vim.fs.normalize(vim.fs.joinpath(os.getenv('USERPROFILE'), 'AppData', 'LocalLow'))
+  end
+  if vim.fn.has('mac') == 1 then
+    locallow = vim.fs.normalize(vim.fs.joinpath(os.getenv('HOME'), 'Library', 'Application Support'))
+  end
+  if locallow == '' then return end
+  local files = vim.fn.findfile('Player.log', locallow .. '/*/*', -1)
+  for _, f in pairs(files) do
+    local port = PortFromLogFile(f)
+    if port ~= nil then
+      count = count + 1
+      ports[count] = { name = vim.fs.basename(vim.fs.dirname(vim.fs.abspath(f))), port = port }
+    end
+  end
+  return ports
+end
+
 local function find_editor_instance_json()
   return vim.fn.findfile(vim.fs.joinpath('Library', 'EditorInstance.json'), '.;')
 end
@@ -213,12 +259,29 @@ local function unity_dap_adapter()
 end
 
 local function unity_dap_configuration()
-  return {
+  if vim.bo.filetype ~= 'cs' then
+    return
+  end
+  local tbl = {}
+  tbl[#tbl + 1] = {
     type = 'unity',
     request = 'launch',
     name = 'Unity Editor',
     path = function() return find_editor_instance_json() end
   }
+  local ports = GatheringPorts()
+  if ports == nil then
+    return tbl
+  end
+  for _, p in pairs(ports) do
+    tbl[#tbl + 1] = {
+      type = 'unity',
+      request = 'launch',
+      name = p.name,
+      endPoint = p.port
+    }
+  end
+  return tbl
 end
 
 local function setup_dap()
@@ -229,7 +292,7 @@ local function setup_dap()
   dap.providers.configs.cs = function(_)
     if M._config.debugger == 'unity-debug' then
       dap.adapters.unity = unity_dap_adapter()
-      return { unity_dap_configuration() }
+      return unity_dap_configuration()
     end
     if M._config.debugger == 'vstuc' then
       dap.adapters.vstuc = vstuc_dap_adapter()
