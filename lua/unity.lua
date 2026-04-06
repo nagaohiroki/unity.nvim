@@ -11,7 +11,7 @@ M._config = {
     {
       publisher = 'VisualStudioToolsForUnity',
       extension = 'vstuc',
-      version   = '1.2.0',
+      version   = '1.2.1',
     },
     unity_debug =
     {
@@ -58,6 +58,7 @@ local function GatheringPorts()
   end
   if locallow == '' then return end
   local files = vim.fn.findfile('Player.log', locallow .. '/*/*', -1)
+  if type(files) == 'string' then return end
   for _, f in pairs(files) do
     local port = PortFromLogFile(f)
     if port ~= nil then
@@ -69,7 +70,8 @@ local function GatheringPorts()
 end
 
 local function find_editor_instance_json()
-  return vim.fn.findfile(vim.fs.joinpath('Library', 'EditorInstance.json'), '.;')
+  local instance = vim.fn.findfile(vim.fs.joinpath('Library', 'EditorInstance.json'), '.;')
+  if type(instance) == 'string' then return instance end
 end
 
 local function get_process_id()
