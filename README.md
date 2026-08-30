@@ -3,15 +3,13 @@
 This is a Neovim plugin for Unity
 
 - Unity Play/Stop/Refresh with Neovim commands.
-- Debug Unity from Neovim. (Please check the license of the package before using it.)
-   - [vstuc](https://marketplace.visualstudio.com/items?itemName=VisualStudioToolsForUnity.vstuc)
-   - [unity-debug](https://marketplace.visualstudio.com/items?itemName=deitry.unity-debug)
+- nvim-dap configuration for Unity (using DotRush)
 
 ## Requrements
 
 - Neovim >= 0.10.0
 - [NeovimForUnity](https://github.com/nagaohiroki/NeovimForUnity) (Unity Package)
-- .NET SDK installed and `dotnet` command available(for vsutc debugger)
+- .NET SDK installed and `dotnet` command available.
 
 ## Installation
 
@@ -20,7 +18,15 @@ This is a Neovim plugin for Unity
 ```lua
 {
   'nagaohiroki/unity.nvim',
-  opts = {}
+  ft = { 'cs' }, 
+  opts = {},
+},
+{
+  'JaneySprings/DotRush',
+  build = 'dotnet publish src/DotRush.Debugging.Mono -c Release',
+  config = function(plugin)
+    vim.g.unitydbg = vim.fs.joinpath(plugin.dir, 'extension', 'bin', 'DebuggerMono', 'monodbg')
+  end
 }
 ```
 
@@ -28,42 +34,7 @@ This is a Neovim plugin for Unity
 | ------------- | -------------- |
 |  URefresh | Refresh Unity |
 |  UPlay | Play Unity |
-|  UStop | Stop Playing Unity |
 |  UPause | Pause Unity |
-|  Unpause | Unpause Unity |
-|  ShowUnityProcess | Show Debug Target Info |
-|  UnityDebuggerInstall (Press Ctrl+D to see suggestions) | Install Debugger  \*1 |
-|  UnityDebuggerUninstall (Press Ctrl+D to see suggestions) | Uninstall Debugger  |
+|  UOpen | Open Unity Editor from source files |
+|  UClose | Close Unity Editor  |
 
-\*1 Installed debugger path.
-- **Linux** or **MacOS**: `~/.local/share/nvim/unity-debugger`
-- **Windows**: `%LOCALAPPDATA%\nvim-data\unity-debugger`
-
-## Default Configuration
-
-```lua
-{
-  'nagaohiroki/unity.nvim',
-  opts = {
-    discover_time       = 2000,
-    install_path        = vim.fs.joinpath(vim.fn.stdpath('data'), 'unity-debugger', 'extensions'),
-    install_path_vscode = vim.fs.joinpath(vim.env.HOME, '.vscode', 'extensions'),
-    debugger            = 'vstuc', -- or 'unity_debug'
-    debuggers           =
-    {
-      vstuc =
-      {
-        publisher = 'VisualStudioToolsForUnity',
-        extension = 'vstuc',
-        version   = '1.1.1',
-      },
-      unity_debug =
-      {
-        publisher = 'deitry',
-        extension = 'unity-debug',
-        version   = '3.0.11',
-      },
-    },
-  }
-}
-```
