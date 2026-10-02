@@ -3,7 +3,6 @@
 This is a Neovim plugin for Unity
 
 - Unity Play/Stop/Refresh with Neovim commands.
-- nvim-dap configuration for Unity (using DotRush)
 
 ## Requrements
 
@@ -21,13 +20,6 @@ This is a Neovim plugin for Unity
   ft = { 'cs' }, 
   opts = {},
 },
-{
-  'JaneySprings/DotRush',
-  build = 'dotnet publish src/DotRush.Debugging.Mono -c Release',
-  config = function(plugin)
-    vim.g.unitydbg = vim.fs.joinpath(plugin.dir, 'extension', 'bin', 'DebuggerMono', 'monodbg')
-  end
-}
 ```
 
 | Command |   |
