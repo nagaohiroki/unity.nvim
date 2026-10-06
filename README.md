@@ -2,13 +2,17 @@
 
 This is a Neovim plugin for Unity
 
-- Unity Play/Stop/Refresh with Neovim commands.
+- Unity Play/Stop/Refresh/Open/Close with Neovim commands.
 
 ## Requrements
 
 - Neovim >= 0.10.0
-- [NeovimForUnity](https://github.com/nagaohiroki/NeovimForUnity) (Unity Package)
-- .NET SDK installed and `dotnet` command available.
+- unity cli(Unity >= 6000)
+- unity pipeline
+
+``` bash
+unity pipeline install
+```
 
 ## Installation
 
