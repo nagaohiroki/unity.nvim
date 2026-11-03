@@ -2,13 +2,13 @@
 
 This is a Neovim plugin for Unity
 
-- Unity Play/Stop/Refresh/Open/Close with Neovim commands.
+- Unity Play/Refresh/Open/Close with Neovim commands.
 
 ## Requrements
 
 - Neovim >= 0.10.0
-- unity cli(Unity >= 6000)
-- unity pipeline
+- unity cli >= 1.0.0-beta.15(Unity >= 6000.6)
+- unity pipeline >= 0.9.1-exp.1
 
 ``` bash
 unity pipeline install
