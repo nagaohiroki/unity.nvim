@@ -20,33 +20,6 @@ local function unity_command(command, on_success)
     on_success(result)
   end)
 end
-local function show_errors()
-  unity_command({ 'unity', 'command', 'get_console_logs', '--json' },
-    function(obj)
-      local result = obj.data.result
-      local logs = result.logs
-      local list = {}
-      for _, log in ipairs(logs) do
-        local file, line, col, msg = log.message:match("([%w%s%_%-%./%\\]+)%(?(%d+)%,?(%d*)%)?%:%s*(.*)")
-        table.insert(list, {
-          filename = vim.fs.joinpath(obj.data.target.projectPath, file),
-          lnum = tonumber(line),
-          col = tonumber(col) or 1,
-          text = msg,
-          type = 'E'
-        })
-      end
-      vim.schedule(function()
-        if result.total == 0 then
-          vim.cmd('cclose')
-          vim.fn.setqflist({}, 'r')
-        else
-          vim.fn.setqflist(list, 'r')
-          vim.cmd('copen')
-        end
-      end)
-    end)
-end
 local function unity_play()
   unity_command({ 'unity', 'command', 'editor_status', '--json' },
     function(obj)
@@ -61,8 +34,7 @@ local function unity_play()
   )
 end
 local function unity_recompile()
-  unity_command({ 'unity', 'command', 'recompile', '--json' },
-    function(_) vim.defer_fn(show_errors, 2000) end)
+  unity_command({ 'unity', 'command', 'recompile', '--json' }, function(_) end)
 end
 local function unity_pause()
   unity_command({ 'unity', 'command', 'editor_pause', '--json' }, function(_) end)
