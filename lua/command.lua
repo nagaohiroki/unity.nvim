@@ -10,93 +10,89 @@ end
 local function current_dir()
   return vim.fs.root(vim.api.nvim_buf_get_name(0), { 'ProjectSettings', 'Assets' })
 end
-local function unity_command(command, on_success)
+
+local function validate(result)
+  if result.success == true then return true end
+  if result.command == 'recompile' and result.data ~= vim.NIL then return true end
+  for _, error in ipairs(result.errors) do
+    vim.notify(error.code .. ':' .. error.message, vim.log.levels.ERROR)
+  end
+  return false
+end
+local function unity_command(command, on_success, unused_project_path)
   if not has_unity_cli() then return end
+  local cmdmsg = table.concat(command, ' ')
   table.insert(command, 1, 'unity')
+  if unused_project_path == nil then
+    table.insert(command, '--project-path')
+    table.insert(command, current_dir())
+  end
   table.insert(command, '--format')
   table.insert(command, 'json')
+  vim.notify('wait for ' .. cmdmsg)
   vim.system(command, { text = true }, function(obj)
-    local result = vim.json.decode(obj.stdout)
-    if result.success == false then
-      vim.schedule(function()
-        local errors = result.errors
-        local msg = errors and errors[1] and errors[1].message
-        vim.notify(msg, vim.log.levels.ERROR)
-      end)
-      return
-    end
-    on_success(result)
+    local ok, result = pcall(vim.json.decode, obj.stdout)
+    vim.schedule(function()
+      if not ok then
+        vim.notify('unity.nvim failed to parse output of ' .. cmdmsg)
+        return
+      end
+      if not validate(result) then return end
+      if on_success ~= nil then on_success(result) end
+      vim.notify('done ' .. cmdmsg)
+    end)
   end)
 end
 local function unity_play()
-  local cur = current_dir()
-  unity_command({ 'status' },
-    function(obj)
-      local instances = obj.data.instances or {}
-      for _, instance in ipairs(instances) do
-        local project = vim.fs.normalize(instance.project)
-        if project == cur then
-          if instance.frameCount ~= nil and instance.playerLoopTicking == true then
-            unity_command({ 'cmd', 'editor.playmode', 'stop' }, function(_) end)
-          else
-            unity_command({ 'cmd', 'editor.playmode', 'start' }, function(_) end)
-          end
-        end
+  unity_command({ 'status' }, function(obj)
+    local instances = obj.data.instances or {}
+    for _, instance in ipairs(instances) do
+      if instance.frameCount ~= nil and instance.playerLoopTicking == true then
+        unity_command({ 'cmd', 'editor.playmode', 'stop' })
+      else
+        unity_command({ 'cmd', 'editor.playmode', 'start' })
       end
     end
-  )
+  end)
 end
 local function unity_recompile()
   local cur = current_dir()
-  local wait = 2000
-  local function parse_log(log, type)
-    local file, line, col, msg = log:match("([%w%s%_%-%./%\\]+)%(?(%d+)%,?(%d*)%)?%:%s*(.*)")
-    if not file then return nil end
-    return {
-      filename = vim.fs.normalize(vim.fs.joinpath(cur, file)),
-      lnum = tonumber(line),
-      col = tonumber(col) or 1,
-      text = msg,
-      type = type
-    }
+  local function parse_logs(logs, type, list)
+    for _, log in ipairs(logs) do
+      table.insert(list, {
+        filename = vim.fs.normalize(vim.fs.joinpath(cur, log.file)),
+        lnum = tonumber(log.line) or 1,
+        col = tonumber(log.colmun) or 1,
+        text = log.message,
+        type = type
+      })
+    end
   end
-  local function poll_status()
-    unity_command({ 'cmd', 'recompile_status' }, function(status_obj)
-      local data = status_obj.data or {}
-      local result = data.result
-      if not result or result.status ~= 'completed' then
-        vim.defer_fn(poll_status, wait)
-        return
-      end
-      local list = {}
-      local errors = result.errors or {}
-      for _, log in ipairs(errors) do
-        table.insert(list, parse_log(log, 'E'))
-      end
-      vim.schedule(function()
-        if #list == 0 then
-          vim.cmd('cclose')
-          vim.fn.setqflist({}, 'r')
-        else
-          vim.fn.setqflist(list, 'r')
-          vim.cmd('copen')
-        end
-      end)
-    end)
-  end
-  unity_command({ 'cmd', 'recompile' }, function(_)
-    vim.defer_fn(poll_status, wait)
+  unity_command({ 'recompile', '--strict' }, function(obj)
+    local list = {}
+    local data = obj.data
+    if data == vim.NIL then return end
+    local errors = data.errors or {}
+    parse_logs(errors, 'E', list)
+    local warning = data.warnings or {}
+    parse_logs(warning, 'W', list)
+    if #list == 0 then
+      vim.cmd('cclose')
+      vim.fn.setqflist({}, 'r')
+    else
+      vim.fn.setqflist(list, 'r')
+      vim.cmd('copen')
+    end
   end)
 end
 local function unity_pause()
-  unity_command({ 'cmd', 'editor.playmode', 'pause' }, function(_) end)
+  unity_command({ 'cmd', 'editor.playmode', 'pause' })
 end
 local function unity_open()
-  unity_command({ 'open', current_dir() }, function(_) end)
+  unity_command({ 'open', current_dir() }, nil, true)
 end
 local function unity_close()
-  unity_command({ 'cmd', 'eval', 'UnityEditor.EditorApplication.Exit(0);' },
-    function(_) end)
+  unity_command({ 'close', current_dir() }, nil, true)
 end
 local function create_user_commands()
   vim.api.nvim_create_user_command('UPlay', unity_play, {})
