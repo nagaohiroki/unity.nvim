@@ -25,17 +25,17 @@ end
 local function unity_command(command, on_success)
   if not has_unity_cli() then return end
   local cmdmsg = table.concat(command, ' ')
-  vim.notify('wait for ' .. cmdmsg)
+  vim.notify('wait for : ' .. cmdmsg)
   vim.system(command, { text = true }, function(obj)
     local ok, result = pcall(vim.json.decode, obj.stdout)
     vim.schedule(function()
       if not ok then
-        vim.notify('unity.nvim failed to parse output of ' .. cmdmsg)
+        vim.notify('unity.nvim failed to parse output of : ' .. cmdmsg)
         return
       end
       if not validate(result) then return end
       if on_success ~= nil then on_success(result) end
-      vim.notify('done ' .. cmdmsg)
+      vim.notify('done : ' .. cmdmsg)
     end)
   end)
 end
@@ -53,16 +53,16 @@ local function create_command_project(command)
   return create_command(command)
 end
 
-local function unity_command_editor(command)
-  unity_command(create_command({ command, current_dir() }))
+local function unity_command_editor(mode, on_success)
+  unity_command(create_command({ mode, current_dir() }), on_success)
 end
 
 local function unity_command_project(command, on_success)
   unity_command(create_command_project(command), on_success)
 end
 
-local function unity_command_editor_playmode(command, on_success)
-  unity_command(create_command_project({ 'cmd', 'editor.playmode', command }), on_success)
+local function unity_command_editor_playmode(mode, on_success)
+  unity_command(create_command_project({ 'cmd', 'editor.playmode', mode }), on_success)
 end
 
 local function unity_play()
@@ -108,11 +108,9 @@ local function unity_recompile()
     end
   end)
 end
-
 local function unity_pause() unity_command_editor_playmode('pause') end
 local function unity_open() unity_command_editor('open') end
 local function unity_close() unity_command_editor('close') end
-
 local function create_user_commands()
   vim.api.nvim_create_user_command('UPlay', unity_play, {})
   vim.api.nvim_create_user_command('URefresh', unity_recompile, {})
