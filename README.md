@@ -31,6 +31,6 @@ unity pipeline install
 |  URefresh | Refresh Unity |
 |  UPlay | Play Unity |
 |  UPause | Pause Unity |
-|  UOpen | Open Unity Editor from source files |
-|  UClose | Close Unity Editor  |
+|  UOpen | Open Unity Editor |
+|  UClose | Close Unity Editor |
 
