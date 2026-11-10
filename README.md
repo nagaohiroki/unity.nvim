@@ -7,7 +7,7 @@ This is a Neovim plugin for Unity
 ## Requrements
 
 - Neovim >= 0.10.0
-- unity cli >= 1.0.0-beta.15(Unity >= 6000.6)
+- unity cli >= 1.0.0-beta.17
 - unity pipeline >= 0.9.1-exp.1
 
 ``` bash

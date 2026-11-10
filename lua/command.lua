@@ -13,66 +13,62 @@ local function current_dir()
   return vim.fs.root(vim.api.nvim_buf_get_name(0), { 'ProjectSettings', 'Assets' })
 end
 
-local function validate(result)
-  if result.success == true then return true end
-  if result.command == 'recompile' and result.data ~= vim.NIL then return true end
-  for _, error in ipairs(result.errors) do
-    vim.notify(error.code .. ':' .. error.message, vim.log.levels.ERROR)
+local function parse(obj)
+  local ok, result = pcall(vim.json.decode, obj.stdout)
+  if obj.code == 6 or obj.code == 0 then
+    if ok then return result end
+    return {}
   end
-  return false
+  if ok then
+    for _, error in ipairs(result.errors) do
+      vim.notify(error.code .. ':' .. error.message, vim.log.levels.ERROR)
+    end
+  else
+    vim.notify(obj.code .. ':' .. obj.stdout, vim.log.levels.ERROR)
+  end
+  return nil
 end
 
 local function unity_command(command, on_success)
   if not has_unity_cli() then return end
+  table.insert(command, 1, 'unity')
   local cmdmsg = table.concat(command, ' ')
   vim.notify('wait for : ' .. cmdmsg)
   vim.system(command, { text = true }, function(obj)
-    local ok, result = pcall(vim.json.decode, obj.stdout)
     vim.schedule(function()
-      if not ok then
-        vim.notify('unity.nvim failed to parse output of : ' .. cmdmsg)
-        return
-      end
-      if not validate(result) then return end
-      if on_success ~= nil then on_success(result) end
+      local result = parse(obj)
+      if not result then return end
+      if on_success then on_success(result) end
       vim.notify('done : ' .. cmdmsg)
     end)
   end)
 end
-
-local function create_command(command)
-  table.insert(command, 1, 'unity')
-  table.insert(command, '--format')
-  table.insert(command, 'json')
-  return command
-end
-
-local function create_command_project(command)
-  table.insert(command, '--project-path')
-  table.insert(command, current_dir())
-  return create_command(command)
-end
-
 local function unity_command_editor(mode, on_success)
-  unity_command(create_command({ mode, current_dir() }), on_success)
+  unity_command({ mode, current_dir() }, on_success)
 end
 
 local function unity_command_project(command, on_success)
-  unity_command(create_command_project(command), on_success)
+  table.insert(command, '--project-path')
+  table.insert(command, current_dir())
+  table.insert(command, '--format')
+  table.insert(command, 'json')
+  unity_command(command, on_success)
 end
 
-local function unity_command_editor_playmode(mode, on_success)
-  unity_command(create_command_project({ 'cmd', 'editor.playmode', mode }), on_success)
+local function unity_command_playmode(mode, on_success)
+  unity_command(
+    { 'cmd', 'editor.playmode', mode, '--project-path', current_dir() },
+    on_success)
 end
 
 local function unity_play()
   unity_command_project({ 'status' }, function(obj)
     local instances = obj.data.instances or {}
     for _, instance in ipairs(instances) do
-      if instance.frameCount ~= nil and instance.playerLoopTicking == true then
-        unity_command_editor_playmode('stop')
+      if instance.frameCount and instance.playerLoopTicking then
+        unity_command_playmode('stop')
       else
-        unity_command_editor_playmode('start')
+        unity_command_playmode('start')
       end
     end
   end)
@@ -108,7 +104,7 @@ local function unity_recompile()
     end
   end)
 end
-local function unity_pause() unity_command_editor_playmode('pause') end
+local function unity_pause() unity_command_playmode('pause') end
 local function unity_open() unity_command_editor('open') end
 local function unity_close() unity_command_editor('close') end
 local function create_user_commands()
